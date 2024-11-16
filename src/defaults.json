@@ -1,0 +1,29 @@
+{
+    "paths": {
+        "data": "/data",
+        "logs": "/data/logs",
+        "config": "/data/config",
+        "database": "/data/database"
+    },
+    "database": {
+        "useSQLite": true,
+        "SQLiteName": "stagestream",
+        "mySQLLogin": {
+            "host": "localhost",
+            "user": "root",
+            "password": "password",
+            "database": "stagestream",
+            "port": 3306
+        }
+    },
+    "users": {
+        "admin": {
+            "username": "admin",
+            "password": "password",
+            "permissions": ["*"]
+        }
+    },
+    "web": {
+        "port": 3000
+    }
+}
