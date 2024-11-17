@@ -4,7 +4,8 @@ import * as defaults from '../../defaults.json';
 import fs from 'fs';
 import * as logger from '../logger';
 
-let database: MysqlDatabase | SqliteDatabase | null = null;
+let SQLiteDatabase: SqliteDatabase | null = null;
+let MySQLDatabase: MysqlDatabase | null = null;
 
 export async function init(): Promise<void> {
     try {
@@ -12,12 +13,13 @@ export async function init(): Promise<void> {
 
         if (useMysql) {
             logger.info('Initializing MySQL database connection...');
-            database = new MysqlDatabase(
+            MySQLDatabase = new MysqlDatabase(
                 process.env.MYSQL_HOST || defaults.database.mySQLLogin.host,
                 process.env.MYSQL_USER || defaults.database.mySQLLogin.user,
                 process.env.MYSQL_PASSWORD || defaults.database.mySQLLogin.password,
                 process.env.MYSQL_DATABASE || defaults.database.mySQLLogin.database,
             );
+            await MySQLDatabase.connect();
         } else {
             logger.info('Initializing SQLite database connection...');
             const sqlitePath = process.env.SQLITE_PATH || defaults.paths.database;
@@ -28,41 +30,55 @@ export async function init(): Promise<void> {
                 fs.mkdirSync(sqlitePath, { recursive: true });
             }
 
-            database = new SqliteDatabase(`${sqlitePath}/${sqliteFile}`);
+            SQLiteDatabase = new SqliteDatabase(`${sqlitePath}/${sqliteFile}`);
+            await SQLiteDatabase.connect();
         }
 
-        if (!database) {
-           logger.error('Failed to initialize database connection');
-        }
-
-        await database.connect();
         logger.info('Database successfully initialized.');
+        await initializeTables();
     } catch (error) {
-        const errorMessage = (error as Error).message;
-        logger.error(`Database initialization failed: ${errorMessage}`);
+        logger.error(`Database initialization failed: ${(error as Error).message}`);
     }
-
-    await initializeTables();
 }
 
-export async function getConnection() {
+/**
+ * Executes a parameterized query to prevent SQL injection.
+ * @param query The SQL query string with placeholders.
+ * @param params The parameters to bind to the query.
+ * @returns Query result.
+ */
+export async function query(query: string, params: any[] = []): Promise<any> {
     try {
-        if (!database) {
-            logger.error('Database instance not initialized. Initiliazing...');
-            await init();
+        if (SQLiteDatabase) {
+            const connection = await SQLiteDatabase.getConnection();
+            return await connection.all(query, params);
+        } else if (MySQLDatabase) {
+            const connection = await MySQLDatabase.getConnection();
+            return await connection.execute(query, params);
+        } else {
+            throw new Error('No database instance found.');
         }
-        return database.getConnection();
     } catch (error) {
-        const errorMessage = (error as Error).message;
-        logger.error(`Failed to get database connection: ${errorMessage}`);
+        logger.error(`Failed to execute query: ${(error as Error).message}`);
+        throw error;
     }
 }
 
-async function initializeTables() {
+/**
+ * Initializes required tables in the database.
+ */
+async function initializeTables(): Promise<void> {
     try {
-        const connection = await getConnection();
-        
-        logger.info('Initialized Tables');
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                permissions JSON NOT NULL
+            )
+        `;
+        await query(createTableQuery);
+        logger.info('Database tables initialized.');
     } catch (error) {
         logger.error(`Failed to initialize tables: ${(error as Error).message}`);
     }
