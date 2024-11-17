@@ -5,5 +5,6 @@ export enum Permissions {
     PLAYBACK = "playback",
     API = "api",
     METRICS = "metrics",
-    PPROF = "pprof"
+    PPROF = "pprof",
+    CREATE_USER = "create_user",
 }

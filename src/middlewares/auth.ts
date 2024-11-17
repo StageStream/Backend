@@ -29,7 +29,7 @@ export const authorize =
                 permissions: decoded.permissions,
             };
 
-            if (requiredPermissions.length > 0) {
+            if (requiredPermissions.length > 0 && !decoded.permissions.includes(Permissions.ALL)) {
                 const hasPermission = requiredPermissions.every((perm) =>
                     decoded.permissions.includes(perm)
                 );

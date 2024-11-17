@@ -12,7 +12,8 @@ async function close(): Promise<void> {
 }
 
 const app = express();
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/user', user);
 
 const port = process.env.WEB_PORT || defaults.web.port;
