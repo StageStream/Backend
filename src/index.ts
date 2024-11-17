@@ -3,12 +3,17 @@ import * as Logger from './modules/logger';
 import * as defaults from './defaults.json';
 import * as database from './modules/database/database';
 
+// Endpoints
+import { user } from './endpoints/user';
+
 async function close(): Promise<void> {
     await Logger.info('Closing server');
     await Logger.close();
 }
 
 const app = express();
+
+app.use('/user', user);
 
 const port = process.env.WEB_PORT || defaults.web.port;
 

@@ -65,3 +65,51 @@ user.post('/login', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+user.post('/auth', async (req: Request, res: Response) => {
+    if (!req.body.user || !req.body.password || !req.body.action) {
+        res.status(400).json({ error: 'Missing user, password, or action' });
+        return;
+    }
+
+    const { username, password, action } = req.body;
+
+    const adminUser = process.env.ADMIN_USERNAME || defaults.users.admin.username;
+    const adminPass = process.env.ADMIN_PASSWORD || defaults.users.admin.password;
+
+    // Handle admin login
+    if (username === adminUser && password === adminPass) {
+        const token = generateToken(adminUser, [Permissions.ALL]);
+        res.status(200).json({ token });
+        return;
+    }
+
+    // Query for user data
+    const query = 'SELECT * FROM users WHERE name = ?';
+    const result = await database.query(query, [username]);
+
+    if (result.length === 0) {
+        res.status(401).json({ error: 'Invalid username or password' });
+        return;
+    }
+
+    const user = result[0];
+
+    // Compare password with the stored hash
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+        res.status(401).json({ error: 'Invalid username or password' });
+        return;
+    }
+
+    // Generate JWT token
+    const permissions: Permissions[] = user.permissions || [];
+    
+    if (!permissions.includes(action)) {
+        res.status(403).json({ error: 'Forbidden. Insufficient permissions.' });
+        return;
+    }
+
+    res.status(200).json({ message: 'Action authorized' });
+    return;
+});
