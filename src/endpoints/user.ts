@@ -65,14 +65,15 @@ user.post('/login', async (req: Request, res: Response) => {
 
 // Authorization route
 user.post('/auth', async (req: Request, res: Response) => {
-    const { username, password, action } = req.body;
-    if (!username || !password || !action) {
-        res.status(400).json({ error: 'Missing username, password, or action' });
+    const { user, password, action } = req.body;
+
+    if (!user || !password || !action) {
+        res.status(401).json({ error: 'Missing username, password, or action' });
         return;
     }
 
     try {
-        const credentials = await validateCredentials(username, password);
+        const credentials = await validateCredentials(user, password);
         if (!credentials) {
             res.status(401).json({ error: 'Invalid username or password' });
             return;
@@ -88,6 +89,7 @@ user.post('/auth', async (req: Request, res: Response) => {
         }
 
         res.status(200).json({ message: 'Action authorized' });
+        Logger.info(`User ${user} authorized to perform action: ${action}`);
         return;
     } catch (error) {
         Logger.error(`Auth error: ${(error as Error).message}`);
