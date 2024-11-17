@@ -6,13 +6,13 @@
         "database": "/data/database"
     },
     "database": {
-        "useSQLite": true,
+        "useMySQL": false,
         "SQLiteName": "stagestream",
         "mySQLLogin": {
             "host": "localhost",
             "user": "root",
             "password": "password",
-            "database": "stagestream",
+            "database": "stagestream.db",
             "port": 3306
         }
     },
