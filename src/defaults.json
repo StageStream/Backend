@@ -24,6 +24,11 @@
     },
     "web": {
         "port": 3000,
-        "jwtSecret": "secret"
+        "jwtSecret": "secret",
+        "frontEndURL": "http://localhost:3001"
+    },
+    "video": {
+        "url": "http://localhost:8889",
+        "api": "http://localhost:9997"
     }
 }

@@ -2,9 +2,11 @@ import express from 'express';
 import * as Logger from './modules/logger';
 import * as defaults from './defaults.json';
 import * as database from './modules/database/database';
+import cors from 'cors';
 
 // Endpoints
 import { user } from './endpoints/user';
+import { stream } from './endpoints/stream';
 
 async function close(): Promise<void> {
     await Logger.info('Closing server');
@@ -12,9 +14,21 @@ async function close(): Promise<void> {
 }
 
 const app = express();
+
+const corsOptions = {
+    origin: [
+        process.env.FRONT_END_URL || defaults.web.frontEndURL,
+    ],
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/user', user);
+app.use('/stream', stream);
 
 const port = process.env.WEB_PORT || defaults.web.port;
 
