@@ -136,8 +136,76 @@ user.post('/create', authorize([Permissions.CREATE_USER]), async (req: Request, 
     }
 });
 
+user.delete('/delete', authorize([Permissions.DELETE_USER]), async (req: Request, res: Response) => {
+    const { username } = req.body;
+    if (!username) {
+        res.status(400).json({ error: 'Invalid input. Missing username' });
+        return;
+    }
+
+    if (username === (process.env.ADMIN_USERNAME || defaults.users.admin.username)) {
+        res.status(400).json({ error: 'Cannot delete admin user' });
+        return;
+    }
+
+    try {
+        const existingUserQuery = 'SELECT * FROM users WHERE name = ?';
+        const existingUser = await database.query(existingUserQuery, [username]);
+        if (existingUser.length === 0) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const deleteQuery = 'DELETE FROM users WHERE name = ?';
+        await database.query(deleteQuery, [username]);
+        res.status(200).json({ message: 'User deleted' });
+        return;
+    } catch (error) {
+        Logger.error(`Delete user error: ${(error as Error).message}`);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+    }
+});
+
+user.get('/list', authorize([Permissions.DELETE_USER, Permissions.CREATE_USER]), async (req: Request, res: Response) => {
+    try {
+        const query = 'SELECT name, permissions FROM users';
+        const users = await database.query(query);
+        
+        const userList = users.map((user: any) => ({
+            name: user.name,
+            permissions: JSON.parse(user.permissions),
+        }));
+
+        res.status(200).json({ users: userList });
+        return;
+    } catch (error) {
+        Logger.error(`List users error: ${(error as Error).message}`);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+    }
+});
+
 // Get user permissions
 user.get('/permissions', authorize(), async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        res.status(401).json({ error: 'Access denied. No token provided.' });
+        return;
+    }
+
+    try {
+        const permissions = Object.values(Permissions);
+        res.status(200).json({ permissions });
+        return;
+    } catch (error) {
+        Logger.error(`Get permissions error: ${(error as Error).message}`);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+    }
+});
+
+user.get('/selfperms', authorize(), async (req: Request, res: Response) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
         res.status(401).json({ error: 'Access denied. No token provided.' });
@@ -151,7 +219,6 @@ user.get('/permissions', authorize(), async (req: Request, res: Response) => {
             return;
         }
 
-        
         if (username === (process.env.ADMIN_USERNAME || defaults.users.admin.username)) {
             res.status(200).json({ permissions: [Permissions.ALL] });
             return;

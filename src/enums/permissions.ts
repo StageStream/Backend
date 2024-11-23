@@ -7,4 +7,5 @@ export enum Permissions {
     METRICS = "metrics",
     PPROF = "pprof",
     CREATE_USER = "create_user",
+    DELETE_USER = "delete_user",
 }

@@ -29,15 +29,14 @@ export const authorize =
                 permissions: decoded.permissions,
             };
 
-            if (requiredPermissions.length > 0 && !decoded.permissions.includes(Permissions.ALL)) {
-                const hasPermission = requiredPermissions.every((perm) =>
-                    decoded.permissions.includes(perm)
-                );
+            if (decoded.permissions.includes(Permissions.ALL)) {
+                next();
+                return;
+            }
 
-                if (!hasPermission) {
-                    res.status(403).json({ error: 'Forbidden. Insufficient permissions.' });
-                    return;
-                }
+            if (requiredPermissions.length > 0 && !requiredPermissions.some((permission) => decoded.permissions.includes(permission))) {
+                res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
+                return;
             }
 
             next();
