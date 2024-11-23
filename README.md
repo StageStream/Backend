@@ -102,5 +102,3 @@ There are two ways to configure the environment:
 The compiled project will be placed in the `/build` folder. You can start the server directly from there.
 
 ---
-
-This ensures the table is clear and the README stays fully enclosed within the code block. Let me know if you need further changes!
